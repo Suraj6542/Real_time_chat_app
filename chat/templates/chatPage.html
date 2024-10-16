@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5; /* Light grey background */
+            color: #333; /* Dark text color */
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            color: #4A4A4A; /* Darker shade for the heading */
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 80vh; /* Height of chat container */
+            max-width: 600px; /* Max width for chat */
+            margin: 20px auto; /* Centering the chat container */
+            background-color: white; /* White background for chat box */
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            overflow: hidden; /* Hide overflow */
+        }
+
+        .chat-header {
+            background-color: #4267B2; /* Messenger blue color */
+            color: white; /* White text for header */
+            padding: 15px;
+            text-align: center;
+        }
+
+        .chat-item-container {
+            flex: 1; /* Take remaining space */
+            padding: 15px; /* Inner padding */
+            overflow-y: auto; /* Scrollable area */
+            border-top: 1px solid #eaeaea; /* Top border for separation */
+            border-bottom: 1px solid #eaeaea; /* Bottom border for separation */
+        }
+
+        .message {
+            margin: 10px 0; /* Space between messages */
+            padding: 10px; /* Padding inside the message box */
+            border-radius: 8px; /* Rounded corners for messages */
+            background-color: #e1f5fe; /* Light blue background for messages */
+            position: relative; /* Positioning for message boxes */
+            word-wrap: break-word; /* Wrap long messages */
+        }
+
+        .message strong {
+            color: #4267B2; /* Username color */
+        }
+
+        .chat-input {
+            display: flex; /* Flex container for input and button */
+            padding: 10px; /* Padding around input area */
+            border-top: 1px solid #eaeaea; /* Top border */
+            background-color: #f9f9f9; /* Slightly darker input area */
+        }
+
+        .chat-input input[type="text"] {
+            flex: 1; /* Input takes remaining space */
+            padding: 10px; /* Padding for input */
+            border: 1px solid #ccc; /* Border for input */
+            border-radius: 4px; /* Rounded corners for input */
+            margin-right: 10px; /* Space between input and button */
+        }
+
+        .chat-input button {
+            padding: 10px 15px; /* Padding for button */
+            background-color: #4267B2; /* Button color */
+            color: white; /* Button text color */
+            border: none; /* No border */
+            border-radius: 4px; /* Rounded corners for button */
+            cursor: pointer; /* Pointer cursor on hover */
+        }
+
+        .chat-input button:hover {
+            background-color: #365899; /* Darker shade on hover */
+        }
+
+        /* Logout link styling */
+        .logout-link {
+            margin: 10px;
+            text-decoration: none;
+            color: #4267B2; /* Same blue as header */
+            font-weight: bold;
+        }
+
+        .logout-link:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Hello, Welcome to my chat site! {{request.user}}</h1>
+        </div>
+        <div class="chat-item-container" id="id_chat_item_container">
+            <br />
+        </div>
+        {% if request.user.is_authenticated %}
+        <center>
+            <a href="{% url 'logout-user' %}" class="logout-link">Logout</a>
+        </center>
+        {% endif %}
+        <div class="chat-input">
+            <input type="text" id="id_message_send_input" placeholder="Type a message..." />
+            <button type="submit" id="id_message_send_button">Send</button>
+        </div>
+    </div>
+
+    <script>
+      const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+      chatSocket.onopen = function (e) {
+        console.log("The connection was setup successfully !");
+      };
+      chatSocket.onclose = function (e) {
+        console.log("Something unexpected happened !");
+      };
+      document.querySelector("#id_message_send_input").focus();
+      document.querySelector("#id_message_send_input").onkeyup = function (e) {
+        if (e.keyCode == 13) {
+          document.querySelector("#id_message_send_button").click();
+        }
+      };
+      document.querySelector("#id_message_send_button").onclick = function (e) {
+        var messageInput = document.querySelector(
+          "#id_message_send_input"
+        ).value;
+        chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}"}));
+      };
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        var div = document.createElement("div");
+        div.classList.add("message"); // Add message class for styling
+        div.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+        document.querySelector("#id_message_send_input").value = "";
+        document.querySelector("#id_chat_item_container").appendChild(div);
+      };
+    </script>
+</body>
+</html>
